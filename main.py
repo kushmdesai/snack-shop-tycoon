@@ -95,7 +95,7 @@ font = pygame.font.SysFont(None, 36)
 
 # Snack prices
 snacks = {"1": ("Chips", 50), "2": ("Cookies", 10), "3": ("Soda", 3)}
-sell_prices = {"Chips": 70, "Cookies": 15, "Soda":4}
+sell_prices = {"Chips": 75, "Cookies": 15, "Soda":6}
 # Stock
 stock = {"Chips": 0, "Cookies": 0, "Soda": 0}
 running = True
