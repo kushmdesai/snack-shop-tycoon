@@ -1,26 +1,39 @@
 import pygame
 import random
-
+import os
 pygame.init()
+
+BASE_DIR = os.path.dirname(__file__)
+character_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "tycoon_character.png"))
+background_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "background.jpg"))
+shack_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "storage_shack.png"))
+truck_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "truck.png"))
+fence_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "fence.png"))
+farm_rot_fence = pygame.image.load(os.path.join(BASE_DIR, "assets", "fence_farm.png"))
+coin_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "coin.png"))
+npc_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "npc.png"))
+worker_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "npc.png"))
+storage_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "storage.png"))
+store_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "store.png"))
+strawberry_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "strawberry.png"))
+grape_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "grape.png"))
+orange_img = pygame.image.load(os.path.join(BASE_DIR, "assets", "orange.png"))
+strawberry_store = pygame.image.load(os.path.join(BASE_DIR, "assets", "strawberry-store.png"))
+grape_store = pygame.image.load(os.path.join(BASE_DIR, "assets", "grape-store.png"))
+orange_store = pygame.image.load(os.path.join(BASE_DIR, "assets", "orange-store.png"))
+
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
 # Character
-character_img = pygame.image.load("tycoon_character.png").convert_alpha()
 player_rect = character_img.get_rect(topleft=(100, 100))
 
-# Background
-background_img = pygame.image.load("background.jpg").convert_alpha()
-
 # Storage Shack
-shack_img = pygame.image.load("storage_shack.png").convert_alpha()
 shack_rect = shack_img.get_rect(topleft=(630, 50))
 
 # Truck
-truck_img = pygame.image.load("truck.png").convert_alpha()
 truck_rect = truck_img.get_rect(topleft=(630,350))
 # Fences
-fence_img = pygame.image.load("fence.png").convert_alpha()
 fence_positions = [(0,0), (170,0), (340,0), (510,0), (680,0)]
 rot_fence = pygame.transform.rotate(fence_img, 90)
 rot_fence_positions = [(0,30), (770,30), (0,120), (770,120)]
@@ -29,7 +42,6 @@ fences = [fence_img.get_rect(topleft=pos) for pos in fence_positions]
 rot_fences = [rot_fence.get_rect(topleft=pos) for pos in rot_fence_positions]
 
 # Coin Farm Fences
-farm_rot_fence = pygame.image.load("fence_farm.png").convert_alpha()
 farm_fence_positions = [(200, 100), (200, 200), (490, 160)]
 farm_fence_img = pygame.transform.rotate(farm_rot_fence, 90)
 farm_rot_fence_positions = [(200, 100), (200, 300), (300, 100), (300, 300), (400, 100), (400, 300)]
@@ -39,7 +51,6 @@ farm_rot_fences = [farm_rot_fence.get_rect(topleft=pos) for pos in farm_rot_fenc
 
 
 # Coins
-coin_img = pygame.image.load("coin.png").convert_alpha()
 coin_positions = [(300,200), (250, 150), (400,250)]
 coins = [coin_img.get_rect(topleft=pos) for pos in coin_positions]
 farm_coin_spots = [
@@ -48,41 +59,31 @@ farm_coin_spots = [
 ]
 
 # NPCs
-npc_img = pygame.image.load("npc.png").convert_alpha()
 npc_positions = [(700, 300), (665, 300)]
 npcs = [npc_img.get_rect(topleft=pos) for pos in npc_positions]
 
 # Worker
-worker_img = pygame.image.load("npc.png").convert_alpha()
 worker_rect = worker_img.get_rect(topleft=(600, 100))
 
 # Storage
-storage_img = pygame.image.load("storage.png").convert_alpha()
 storage_open = False
 chips_text = ""
 cookies_text = ""
 soda_text = ""
 # Store
-store_img = pygame.image.load("store.png").convert_alpha()
 shop_open = False
 interaction_text = ""
 interaction_text_option = ""
 player_cash = 0
 
 # Fruits
-strawberry_img = pygame.image.load("strawberry.png").convert_alpha()
 strawberry_rect = strawberry_img.get_rect(topleft=(10 , 300))
-strawberry_store = pygame.image.load("strawberry-store.png").convert_alpha()
 strawberry_store_open = False
 
-orange_img = pygame.image.load("orange.png").convert_alpha()
 orange_rect = orange_img.get_rect(topleft=(150 , 310))
-orange_store = pygame.image.load("orange-store.png").convert_alpha()
 orange_store_open = False
 
-grape_img = pygame.image.load("grape.png").convert_alpha()
 grape_rect = grape_img.get_rect(topleft=(80 , 350))
-grape_store = pygame.image.load("grape-store.png").convert_alpha()
 grape_store_open = False
 
 # Purchase cooldown
