@@ -67,9 +67,6 @@ worker_rect = worker_img.get_rect(topleft=(600, 100))
 
 # Storage
 storage_open = False
-chips_text = ""
-cookies_text = ""
-soda_text = ""
 # Store
 shop_open = False
 interaction_text = ""
@@ -95,13 +92,40 @@ font = pygame.font.SysFont(None, 36)
 
 # Snack prices
 snacks = {"1": ("Chips", 50), "2": ("Cookies", 10), "3": ("Soda", 3)}
-sell_prices = {"Chips": 75, "Cookies": 15, "Soda":6}
-# Stock
-stock = {"Chips": 0, "Cookies": 0, "Soda": 0}
+sell_prices = {"Chips": 75, "Cookies": 15, "Soda": 6}
+
+# Stock - Fixed to include all special items properly
+stock = {"Chips": 0, "Cookies": 0, "Soda": 0, "Golden Apples": 0, "Mystery Snack": 0}
+
+# Special items system - Fixed with proper initialization
+def create_mystery_snack():
+    """Create a mystery snack with a random multiplier"""
+    return {"name": "Mystery Snack", "multiplier": random.choice([2, 1.5, 1])}
+
+def get_special_item():
+    """Get a special item with 10% chance, otherwise return None"""
+    if random.random() < 0.1:  # 10% chance for special item
+        if random.random() < 0.5:  # 50/50 between Golden Apple and Mystery Snack
+            return {"name": "Golden Apples", "multiplier": 3}
+        else:
+            return create_mystery_snack()
+    return None
+
+def calculate_sell_price(item_name, base_price):
+    """Calculate the actual selling price including multipliers"""
+    if item_name == "Golden Apples":
+        return base_price * 3
+    elif item_name == "Mystery Snack":
+        # For simplicity, we'll use a fixed high multiplier for mystery snacks
+        # In a more complex system, you'd track individual mystery snack multipliers
+        return base_price * 2
+    else:
+        return base_price
+
 running = True
 millisecond_counter = 0
 
-screen_rect =  screen.get_rect()
+screen_rect = screen.get_rect()
 
 while running:
     interaction_text_option = ""
@@ -112,7 +136,7 @@ while running:
 
     keys = pygame.key.get_pressed()
     # Movement
-    if not shop_open:  # disable movement while shop open
+    if not (shop_open or storage_open or strawberry_store_open or orange_store_open or grape_store_open):
         if keys[pygame.K_w] or keys[pygame.K_UP]:
             player_rect.y -= 300 * dt / 1000
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -163,8 +187,6 @@ while running:
             coins.remove(coin)
 
     player_rect.clamp_ip(screen_rect)
-    # Reset interaction text each frame
-    
 
     # Event handling
     for event in pygame.event.get():
@@ -175,58 +197,97 @@ while running:
             if event.type == pygame.KEYDOWN:
                 # Check cooldown
                 if millisecond_counter - last_buy_time >= buy_delay:
-                    if event.key == pygame.K_1:
-                        if player_cash >= snacks["1"][1]:
-                            player_cash -= snacks["1"][1]
+                    if event.key == pygame.K_1 and player_cash >= snacks["1"][1]:
+                        player_cash -= snacks["1"][1]
+                        last_buy_time = millisecond_counter
+                        special_item = get_special_item()
+                        if special_item:
+                            stock[special_item["name"]] += 1
+                            interaction_text = f"Lucky! You got {special_item['name']} (x{special_item['multiplier']} multiplier)!"
+                        else:
                             stock["Chips"] += 1
                             interaction_text = f"You bought {snacks['1'][0]}"
-                            last_buy_time = millisecond_counter
-                    elif event.key == pygame.K_2:
-                        if player_cash >= snacks["2"][1]:
-                            player_cash -= snacks["2"][1]
+                        
+                    elif event.key == pygame.K_2 and player_cash >= snacks["2"][1]:
+                        player_cash -= snacks["2"][1]
+                        last_buy_time = millisecond_counter
+                        special_item = get_special_item()
+                        if special_item:
+                            stock[special_item["name"]] += 1
+                            interaction_text = f"Lucky! You got {special_item['name']} (x{special_item['multiplier']} multiplier)!"
+                        else:
                             stock["Cookies"] += 1
                             interaction_text = f"You bought {snacks['2'][0]}"
-                            last_buy_time = millisecond_counter
-                    elif event.key == pygame.K_3:
-                        if player_cash >= snacks["3"][1]:
-                            player_cash -= snacks["3"][1]
+                            
+                    elif event.key == pygame.K_3 and player_cash >= snacks["3"][1]:
+                        player_cash -= snacks["3"][1]
+                        last_buy_time = millisecond_counter
+                        special_item = get_special_item()
+                        if special_item:
+                            stock[special_item["name"]] += 1
+                            interaction_text = f"Lucky! You got {special_item['name']} (x{special_item['multiplier']} multiplier)!"
+                        else:
                             stock["Soda"] += 1
                             interaction_text = f"You bought {snacks['3'][0]}"
-                            last_buy_time = millisecond_counter
+                            
                     elif event.key == pygame.K_ESCAPE:
                         shop_open = False
+                        
         elif storage_open:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     storage_open = False
+                    
         elif strawberry_store_open:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
-                    if stock["Soda"] >= 1:
+                    # Priority: Golden Apples > Mystery Snack > Regular Soda
+                    if stock['Golden Apples'] > 0:
+                        stock['Golden Apples'] -= 1
+                        earned = calculate_sell_price("Golden Apples", sell_prices["Soda"])
+                        player_cash += earned
+                        interaction_text = f'Sold Golden Apple for ${earned}!'
+                    elif stock["Mystery Snack"] > 0:
+                        stock['Mystery Snack'] -= 1
+                        earned = calculate_sell_price("Mystery Snack", sell_prices["Soda"])
+                        player_cash += earned
+                        interaction_text = f"Sold Mystery Snack for ${earned}!"
+                    elif stock["Soda"] > 0:
                         stock["Soda"] -= 1
-                        player_cash += sell_prices["Soda"]
-                        interaction_text = "You sold soda"
-                        last_buy_time =  millisecond_counter
+                        earned = sell_prices["Soda"]
+                        player_cash += earned
+                        interaction_text = f"Sold Soda for ${earned}"
+                    else:
+                        interaction_text = "No items to sell!"
+                    last_buy_time = millisecond_counter
                 elif event.key == pygame.K_ESCAPE:
                     strawberry_store_open = False
+                    
         elif orange_store_open:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
-                    if stock["Cookies"] >= 1:
+                    if stock["Cookies"] > 0:
                         stock["Cookies"] -= 1
-                        player_cash += sell_prices["Cookies"]
-                        interaction_text = "You sold Cookies"
-                        last_buy_time =  millisecond_counter
+                        earned = sell_prices["Cookies"]
+                        player_cash += earned
+                        interaction_text = f"Sold Cookies for ${earned}"
+                        last_buy_time = millisecond_counter
+                    else:
+                        interaction_text = "No cookies to sell!"
                 elif event.key == pygame.K_ESCAPE:
                     orange_store_open = False
+                    
         elif grape_store_open:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
-                    if stock["Chips"] >= 1:
+                    if stock["Chips"] > 0:
                         stock["Chips"] -= 1
-                        player_cash += sell_prices["Chips"]
-                        interaction_text = "You sold Chips"
-                        last_buy_time =  millisecond_counter
+                        earned = sell_prices["Chips"]
+                        player_cash += earned
+                        interaction_text = f"Sold Chips for ${earned}"
+                        last_buy_time = millisecond_counter
+                    else:
+                        interaction_text = "No chips to sell!"
                 elif event.key == pygame.K_ESCAPE:
                     grape_store_open = False
         else:
@@ -234,17 +295,23 @@ while running:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 if player_rect.colliderect(worker_rect):
                     storage_open = True
-                if player_rect.colliderect(strawberry_rect):
+                elif player_rect.colliderect(strawberry_rect):
                     strawberry_store_open = True
-                if player_rect.colliderect(orange_rect):
+                elif player_rect.colliderect(orange_rect):
                     orange_store_open = True
-                if player_rect.colliderect(grape_rect):
+                elif player_rect.colliderect(grape_rect):
                     grape_store_open = True
-                for npc in npcs:
-                    if player_rect.colliderect(npc):
-                        shop_open = True
-                        break
-                
+                else:
+                    for npc in npcs:
+                        if player_rect.colliderect(npc):
+                            shop_open = True
+                            break
+
+    # Coin farm spawns every minute
+    if millisecond_counter - last_coin_spawn_time >= coin_spawn_delay:
+        spawn_pos = random.choice(farm_coin_spots)
+        coins.append(coin_img.get_rect(topleft=spawn_pos))
+        last_coin_spawn_time = millisecond_counter
 
     # Draw
     screen.blit(background_img, (0,0))
@@ -264,11 +331,12 @@ while running:
     screen.blit(truck_img, truck_rect)
     screen.blit(shack_img, shack_rect)
     screen.blit(worker_img, worker_rect)
+    
     # Cash
     cash_text = font.render(f"Cash: ${player_cash}", True, (255,255,0))
     screen.blit(cash_text, (10,10))
 
-    # Interaction text
+    # Static labels
     message_surface = font.render("Buy", True, (0, 0, 0))
     screen.blit(message_surface,(670, 370))
     message_surface = font.render("Storage", True, (0, 0, 0))
@@ -277,13 +345,6 @@ while running:
     screen.blit(message_surface,(300, 150))
     message_surface = font.render("Sell", True, (0, 0, 0))
     screen.blit(message_surface,( 75, 300))
-    millisecond_counter += dt
-
-# Coin farm spawns every minute
-    if millisecond_counter - last_coin_spawn_time >= coin_spawn_delay:
-        spawn_pos = random.choice(farm_coin_spots)
-        coins.append(coin_img.get_rect(topleft=spawn_pos))
-        last_coin_spawn_time = millisecond_counter
 
     screen.blit(strawberry_img, strawberry_rect)
     screen.blit(orange_img, orange_rect)
@@ -295,17 +356,34 @@ while running:
 
     if storage_open:
         screen.blit(storage_img, (100, 100))
+        # Display regular items
         message_surface = font.render(str(stock["Chips"]), True, (0 , 0, 0))
         screen.blit(message_surface, (200, 340))
         message_surface = font.render(str(stock["Cookies"]), True, (0 , 0, 0))
         screen.blit(message_surface, (390, 340))
         message_surface = font.render(str(stock["Soda"]), True, (0 , 0, 0))
         screen.blit(message_surface, (580, 340))
+        
+        # Display special items
+        special_y_offset = 380
+        message_surface = font.render(f"Golden Apples: {stock['Golden Apples']}", True, (255, 215, 0))
+        screen.blit(message_surface, (200, special_y_offset))
+        message_surface = font.render(f"Mystery Snacks: {stock['Mystery Snack']}", True, (138, 43, 226))
+        screen.blit(message_surface, (200, special_y_offset + 30))
 
     if strawberry_store_open:
         screen.blit(strawberry_store, (100, 100))
         message_surface = font.render(str(stock["Soda"]), True, (0 , 0, 0))
         screen.blit(message_surface, (390, 340))
+        
+        # Show special items available for sale
+        special_y = 20
+        if stock['Golden Apples'] > 0:
+            message_surface = font.render(f"Golden Apples: {stock['Golden Apples']} (${calculate_sell_price('Golden Apples', sell_prices['Soda'])} each)", True, (255, 215, 0))
+            screen.blit(message_surface, (270, special_y))
+        if stock['Mystery Snack'] > 0:
+            message_surface = font.render(f"Mystery Snacks: {stock['Mystery Snack']} (${calculate_sell_price('Mystery Snack', sell_prices['Soda'])} each)", True, (138, 43, 226))
+            screen.blit(message_surface, (270, special_y + 25))
 
     if orange_store_open:
         screen.blit(orange_store, (100, 100))
@@ -322,7 +400,7 @@ while running:
         screen.blit(message_surface, (10, 50))
 
     if interaction_text:
-        message_surface = font.render("Last Item Bought:", True, (255, 0, 0))
+        message_surface = font.render("Last Action:", True, (255, 0, 0))
         screen.blit(message_surface, (10, 100))
         message_surface = font.render(interaction_text, True, (255, 0, 0))
         screen.blit(message_surface, (10, 130))
